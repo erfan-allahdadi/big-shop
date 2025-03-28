@@ -1,8 +1,10 @@
 import { Controller, Post, Body } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { VerifyOtpDto } from './dto/verify.dto';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -32,6 +34,19 @@ export class AuthController {
       loginDto.phoneNumber,
       loginDto.password,
       loginDto.lang || 'fa',
+    );
+  }
+
+  @Post('verify-otp')
+  @ApiOperation({ summary: 'تأیید کد OTP' })
+  @ApiResponse({ status: 200, description: 'OTP تأیید شد و کاربر لاگین شد' })
+  @ApiResponse({ status: 400, description: 'اطلاعات مورد نیاز نیست' })
+  async verifyOtp(@Body() verifyOtpDto: VerifyOtpDto) {
+    return this.authService.verifyOtp(
+      verifyOtpDto.userId,
+      verifyOtpDto.phoneNumber,
+      verifyOtpDto.otp,
+      verifyOtpDto.lang || 'fa',
     );
   }
 }

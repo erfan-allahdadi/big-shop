@@ -46,6 +46,14 @@ export class AuthService {
       });
     }
 
+    const defaultRole = await this.prisma.role.findUnique({
+      where: { name: RoleEnum.USER },
+    });
+
+    if (!defaultRole) {
+      throw new BadRequestException('Default role not found');
+    }
+
     const { otp, otpExpires } = generateOTP();
 
     const user = existingUser
@@ -58,7 +66,7 @@ export class AuthService {
             name: '',
             password: '',
             phoneNumber,
-            role: 'USER',
+            roleId: defaultRole.id,
             otpCode: otp,
             otpExpires,
           },
