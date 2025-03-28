@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RoleEnum {
+  USER
+  ADMIN
+}
+
+model User {
+  id          String   @id @default(uuid())
+  name        String
+  password    String
+  otpCode     String?  
+  otpExpires  DateTime?
+  phoneNumber String   @unique
+  roleId      String
+  role        Role     @relation(fields: [roleId], references: [id])
+  isVerified  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model Role {
+  id          String       @id @default(uuid())
+  name        RoleEnum     @unique
+  description String?
+  users       User[]
+  permissions RolePermission[]
+}
+
+model Permission {
+  id          String @id @default(uuid())
+  name        String @unique
+  description String?
+  roles       RolePermission[]
+}
+
+model RolePermission {
+  id           String      @id @default(uuid())
+  roleId       String
+  permissionId String
+  role         Role        @relation(fields: [roleId], references: [id])
+  permission   Permission  @relation(fields: [permissionId], references: [id])
+
+  @@unique([roleId, permissionId])
+}
