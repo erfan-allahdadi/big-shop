@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, IsOptional } from 'class-validator';
+import { IsNotEmpty, IsString } from 'class-validator';
 
 export class VerifyOtpDto {
   @ApiProperty({ example: '123456', description: 'شناسه کاربری' })
@@ -16,13 +16,4 @@ export class VerifyOtpDto {
   @IsString()
   @IsNotEmpty()
   otp: string;
-
-  @ApiProperty({
-    example: 'fa',
-    enum: ['fa', 'en'],
-    description: 'زبان (اختیاری)',
-  })
-  @IsString()
-  @IsOptional()
-  lang?: 'fa' | 'en';
 }

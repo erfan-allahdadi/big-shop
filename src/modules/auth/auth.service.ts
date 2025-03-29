@@ -30,9 +30,9 @@ export class AuthService {
     private smsService: SmsService,
   ) {}
 
-  async register(phoneNumber: string, lang: 'fa' | 'en' = 'fa') {
-    const errors = ErrorMessages[lang] || ErrorMessages.fa;
-    const success = SuccessMessages[lang] || SuccessMessages.fa;
+  async register(phoneNumber: string, password: string) {
+    const errors = ErrorMessages.fa;
+    const success = SuccessMessages.fa;
 
     const existingUser = await this.prisma.user.findUnique({
       where: { phoneNumber },
@@ -45,6 +45,15 @@ export class AuthService {
         message: errors.USER_ALREADY_EXISTS.message,
       });
     }
+
+    if (!password || password.length < 6) {
+      throw new BadRequestException({
+        code: errors.INVALID_CREDENTIALS.code,
+        message: errors.INVALID_CREDENTIALS.message,
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const defaultRole = await this.prisma.role.findUnique({
       where: { name: RoleEnum.USER },
@@ -59,12 +68,13 @@ export class AuthService {
     const user = existingUser
       ? await this.prisma.user.update({
           where: { id: existingUser.id },
-          data: { otpCode: otp, otpExpires },
+          data: { otpCode: otp, otpExpires, password: hashedPassword },
         })
       : await this.prisma.user.create({
           data: {
-            name: '',
-            password: '',
+            firstName: '',
+            lastName: '',
+            password: hashedPassword,
             phoneNumber,
             roleId: defaultRole.id,
             otpCode: otp,
@@ -88,20 +98,16 @@ export class AuthService {
     });
   }
 
-  async verifyOtp(
-    userId: string,
-    phoneNumber: string,
-    otp: string,
-    lang: 'fa' | 'en' = 'fa',
-  ) {
-    const errors = ErrorMessages[lang] || ErrorMessages.fa;
-    const success = SuccessMessages[lang] || SuccessMessages.fa;
+  async verifyOtp(userId: string, phoneNumber: string, otp: string) {
+    const errors = ErrorMessages.fa;
+    const success = SuccessMessages.fa;
 
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
         id: true,
-        name: true,
+        firstName: true,
+        lastName: true,
         role: true,
         phoneNumber: true,
         otpCode: true,
@@ -120,7 +126,7 @@ export class AuthService {
       },
     });
 
-    const token = this.jwtService.sign({ id: userId, role: user.role });
+    const token = this.jwtService.sign({ id: userId });
 
     return ResponseGeneratorHelper.SuccessResponse({
       code: success.LOGIN_SUCCESS.code,
@@ -131,15 +137,16 @@ export class AuthService {
     });
   }
 
-  async login(phoneNumber: string, password: string, lang: 'en' | 'fa' = 'fa') {
-    const errors = ErrorMessages[lang] || ErrorMessages.fa;
-    const success = SuccessMessages[lang] || SuccessMessages.fa;
+  async login(phoneNumber: string, password: string) {
+    const errors = ErrorMessages.fa;
+    const success = SuccessMessages.fa;
 
     const user = await this.prisma.user.findUnique({
       where: { phoneNumber },
       select: {
         id: true,
-        name: true,
+        firstName: true,
+        lastName: true,
         role: true,
         password: true,
         phoneNumber: true,
@@ -175,6 +182,8 @@ export class AuthService {
       message: success.OTP_SENT.message,
       data: {
         userId: user.id,
+        phoneNumber: user.phoneNumber,
+        otp,
       },
     });
   }
