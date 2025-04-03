@@ -68,13 +68,16 @@ model RolePermission {
 model ProductCategory {
   id          String       @id @default(uuid())
   name        String
+  slug        String   @unique
   description String?
   imageUrl    String?
   parentId    String?
+  isActive    Boolean     @default(true)
   parent      ProductCategory? @relation("CategoryHierarchy", fields: [parentId], references: [id])
   children    ProductCategory[] @relation("CategoryHierarchy")
 
   products    Product[]
+
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
